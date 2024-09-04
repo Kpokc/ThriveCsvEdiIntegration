@@ -27,13 +27,13 @@ namespace ThriveCsvEdiIntegration
                 foreach (string file in files)
                 {
                     
-                    List<string> orderReferences  = await ReadCsvCustomerOrderRef(file, null);
+                    List<string> orderReferences  = await ReadCsvCustomerOrderRef(file, null, null);
+
                     foreach (string orderReference in orderReferences.Distinct())
                     {
-                        Console.WriteLine("----------------------------");
-                        List<string> mainOrderData = await ReadCsvCustomerOrderRef(file, orderReference);
-                        string result = string.Join(",", mainOrderData);
-                        Console.WriteLine(result);
+                        List<string> mainOrderData = await ReadCsvCustomerOrderRef(file, orderReference, null);
+                        string orderData = string.Join(",", mainOrderData);
+                        CreateXmlOrder(orderData);
                     }
                 }
             }
@@ -48,7 +48,7 @@ namespace ThriveCsvEdiIntegration
         }
 
         // Get distinct Customer Order references
-        static private async Task<List<string>> ReadCsvCustomerOrderRef(string file, string orderRef)
+        static private async Task<List<string>> ReadCsvCustomerOrderRef(string file, string orderRef, string orderLines)
         {
             List<string> orderReference = new List<string>();
 
@@ -63,6 +63,7 @@ namespace ThriveCsvEdiIntegration
                 while ((line = await reader.ReadLineAsync()) != null)
                 {
                     var columns = line.Split(',');
+
                     if (orderRef == null)
                     {
                         orderReference.Add(columns[0]);
@@ -78,65 +79,85 @@ namespace ThriveCsvEdiIntegration
             return orderReference;
         }
 
-        static void CreateXmlOrder(List<string> orderReference)
+        static void CreateXmlOrder(string mainOrderData)
         {
-            foreach (var orderRef in orderReference)
+            DateTime currentTime = DateTime.Now;
+
+            var mainData = mainOrderData.Split(',');
+
+            // Load the XML file
+            XDocument xmlDoc = XDocument.Load(@"C:\Users\Pavel.Makarov\OneDrive - Rhenus Logistics\Desktop\Thrive\testXml.xml");
+
+            // Replace the values of certain elements
+            XElement root = xmlDoc.Element("Message");
+
+            if (root != null)
             {
-                DateTime currentTime = DateTime.Now;
-
-                string testTest = "";
-
-                // Load the XML file
-                XDocument xmlDoc = XDocument.Load(@"C:\Users\Pavel.Makarov\OneDrive - Rhenus Logistics\Desktop\Thrive\testXml.xml");
-
-                // Replace the values of certain elements
-                XElement root = xmlDoc.Element("Message");
-
-                if (root != null)
+                // Modify the value of the <MessageID> element
+                XElement xmlMessageId = root.Element("MessageID");
+                if (xmlMessageId != null)
                 {
-                    // Modify the value of the <MessageID> element
-                    XElement xmlMessageId = root.Element("MessageID");
-                    if (xmlMessageId != null)
-                    {
-                        xmlMessageId.Value = currentTime.ToString("HHmmssfff");
-                    }
-
-                    // Modify the value of the <MessageCreatedDate> element
-                    XElement xmlMessageCreatedDate = root.Element("MessageCreatedDate");
-                    if (xmlMessageCreatedDate != null)
-                    {
-                        xmlMessageCreatedDate.Value = currentTime.ToString("yyyy-MM-dd");
-                    }
-
-                    // Modify the value of the <MessageCreatedTime> element
-                    XElement xmlMessageCreatedTime = root.Element("MessageCreatedTime");
-                    if (xmlMessageCreatedTime != null)
-                    {
-                        xmlMessageCreatedTime.Value = currentTime.ToString("HH:mm:ss");
-                    }
-
-                    //// Modify the value of the <CustomerOrderDate> element
-                    //XElement xmlCustomerOrderDate = root.Element("CustomerOrderDate");
-                    //if (xmlCustomerOrderDate != null)
-                    //{
-                    //    xmlCustomerOrderDate.Value = currentTime.ToString("yyyy-MM-dd");
-                    //}
-
-                    List<string> xmlSegments = XmlSegments();
-                    foreach (var xmlSegment in xmlSegments)
-                    {
-                        XElement xmlSelectedSegment = root.Element(xmlSegment);
-                        if (xmlSelectedSegment != null)
-                        {
-                            xmlSelectedSegment.Value = !string.IsNullOrEmpty(testTest) ? testTest : "";
-                        }
-                    }
+                    xmlMessageId.Value = currentTime.ToString("HHmmssfff");
                 }
 
-                // Save the modified XML back to a file
-                xmlDoc.Save(@"C:\Users\Pavel.Makarov\OneDrive - Rhenus Logistics\Desktop\Thrive\outputTest.xml");
+                // Modify the value of the <MessageCreatedDate> element
+                XElement xmlMessageCreatedDate = root.Element("MessageCreatedDate");
+                if (xmlMessageCreatedDate != null)
+                {
+                    xmlMessageCreatedDate.Value = currentTime.ToString("yyyy-MM-dd");
+                }
 
+                // Modify the value of the <MessageCreatedTime> element
+                XElement xmlMessageCreatedTime = root.Element("MessageCreatedTime");
+                if (xmlMessageCreatedTime != null)
+                {
+                    xmlMessageCreatedTime.Value = currentTime.ToString("HH:mm:ss");
+                }
+
+                // Modify the value of the <CustomerOrderReference> element
+                XElement xmlCustomerOrderReference = root.Element("Order").Element("CustomerOrderReference");
+                if (xmlCustomerOrderReference != null)
+                {
+                    xmlCustomerOrderReference.Value = mainData[0].ToString();
+                }
+
+                int columnCounter = 3;
+                List<string> xmlSegments = XmlSegments();
+                foreach (var xmlSegment in xmlSegments)
+                {
+                    XElement xmlSelectedSegment = root.Element("Order").Element(xmlSegment);
+                    Console.WriteLine(columnCounter);
+                    Console.WriteLine(mainData[columnCounter]);
+                    if (xmlSelectedSegment != null)
+                    {
+                        Console.WriteLine(xmlSegment);
+                        xmlSelectedSegment.Value = !string.IsNullOrEmpty(mainData[columnCounter]) ? mainData[columnCounter] : "";
+                    }
+                    columnCounter++;
+                }
+
+                XElement orderElement = root.Element("Order").Element("Lines");
+
+                if (orderElement != null)
+                {
+                    XElement orderLine = new XElement("Line",
+                        new XElement("StockCode", "TVIN2122"),
+                        new XElement("FullUnitQuantity", "2")
+                        );
+
+                    orderElement.Add(orderLine);
+                }
             }
+
+                
+
+            //foreach (var orderData in mainOrderData)
+            //{
+
+            //}
+
+            // Save the modified XML back to a file
+            xmlDoc.Save(@"C:\Users\Pavel.Makarov\OneDrive - Rhenus Logistics\Desktop\Thrive\outputTest.xml");
         }
 
         private static List<string> XmlSegments()
@@ -144,7 +165,6 @@ namespace ThriveCsvEdiIntegration
             return new List<string>
             {
                 "Narrative",
-                "CustomerOrderReference",
                 "CustomerOrderDate",
                 "OrderPartyReference",
                 "OrderPartyAccountCode",
