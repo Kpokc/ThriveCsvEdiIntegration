@@ -1,13 +1,11 @@
-﻿using System;
+﻿using DotNetEnv;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
-using DotNetEnv;
 using System.Xml.Linq;
-using Sprache;
 
 namespace ThriveCsvEdiIntegration
 {
@@ -15,46 +13,81 @@ namespace ThriveCsvEdiIntegration
     {
         static async Task Main(string[] args)
         {
+            // Load environment variables from the specified .env file (paths.env)
+            Env.Load("./paths.env");
+            string jsonData = Environment.GetEnvironmentVariable("JSONDATA");
+
             try
             {
-                // Load environment variables from the specified .env file (paths.env)
-                Env.Load("./paths.env");
-
-                string custXmlSampleFile = Environment.GetEnvironmentVariable("CUSTXMLSAMPLEFILE");
-                string inputFolder = Environment.GetEnvironmentVariable("INPUTPATH");
-                string outputFolder = Environment.GetEnvironmentVariable("OUTPUTPATH");
-                
-                string[] files = Directory.GetFiles(inputFolder, "*csv");
-
-                foreach (string file in files)
+                using (StreamReader r = new StreamReader(jsonData))
                 {
-                    
-                    List<string> orderReferences  = await ReadCsvCustomerOrderRef(file, null, null);
-
-                    foreach (string orderReference in orderReferences.Distinct())
-                    {
-                        Console.WriteLine(orderReference);
-                        List<string> mainOrderData = await ReadCsvCustomerOrderRef(file, orderReference, null);
-                        string orderData = string.Join(",", mainOrderData);
-
-                        List<string> orderLines = await ReadCsvCustomerOrderRef(file, null, orderReference);
-                        foreach (string line in orderLines)
-                        {
-                            Console.WriteLine(line);
-                        }
-
-                        CreateXmlOrder(Path.GetFileNameWithoutExtension(file), orderData, orderLines, outputFolder, custXmlSampleFile);
-                    }
+                    string json = await r.ReadToEndAsync();
+                    dynamic dataArray = JsonConvert.DeserializeObject(json);
+                    StartToCheckInputFolder(dataArray);
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
-
+            
             Console.WriteLine("XML file updated and saved as 'output.xml'.");
 
             Console.ReadLine();
+        }
+
+        static private void StartToCheckInputFolder(dynamic dataArray)
+        {
+            try
+            {
+                Task.Run(() => 
+                {
+                    foreach (dynamic item in dataArray)
+                    {
+                        string[] files = Directory.GetFiles((string)item.inputPath, "*csv");
+                        if (files != null)
+                        {
+                            foreach (string file in files)
+                            {
+                                Console.WriteLine(file);
+                            }
+                        }
+                    }
+                });
+                //// Load environment variables from the specified .env file (paths.env)
+                //Env.Load("./paths.env");
+
+                //string custXmlSampleFile = Environment.GetEnvironmentVariable("CUSTXMLSAMPLEFILE");
+                //string inputFolder = Environment.GetEnvironmentVariable("INPUTPATH");
+                //string outputFolder = Environment.GetEnvironmentVariable("OUTPUTPATH");
+
+                
+
+                //foreach (string file in files)
+                //{
+
+                //    List<string> orderReferences = await ReadCsvCustomerOrderRef(file, null, null);
+
+                //    foreach (string orderReference in orderReferences.Distinct())
+                //    {
+                //        Console.WriteLine(orderReference);
+                //        List<string> mainOrderData = await ReadCsvCustomerOrderRef(file, orderReference, null);
+                //        string orderData = string.Join(",", mainOrderData);
+
+                //        List<string> orderLines = await ReadCsvCustomerOrderRef(file, null, orderReference);
+                //        foreach (string line in orderLines)
+                //        {
+                //            Console.WriteLine(line);
+                //        }
+
+                //        CreateXmlOrder(Path.GetFileNameWithoutExtension(file), orderData, orderLines, outputFolder, custXmlSampleFile);
+                //    }
+                //}
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
         // Get distinct Customer Order references
@@ -178,6 +211,7 @@ namespace ThriveCsvEdiIntegration
             }
         }
 
+        // Optional segments to be updated
         private static List<string> XmlSegments()
         {
             return new List<string>
