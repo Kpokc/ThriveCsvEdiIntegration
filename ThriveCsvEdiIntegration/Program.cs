@@ -20,8 +20,10 @@ namespace ThriveCsvEdiIntegration
                 // Load environment variables from the specified .env file (paths.env)
                 Env.Load("./paths.env");
 
+                string custXmlSampleFile = Environment.GetEnvironmentVariable("CUSTXMLSAMPLEFILE");
                 string inputFolder = Environment.GetEnvironmentVariable("INPUTPATH");
-
+                string outputFolder = Environment.GetEnvironmentVariable("OUTPUTPATH");
+                
                 string[] files = Directory.GetFiles(inputFolder, "*csv");
 
                 foreach (string file in files)
@@ -41,7 +43,7 @@ namespace ThriveCsvEdiIntegration
                             Console.WriteLine(line);
                         }
 
-                        CreateXmlOrder(Path.GetFileNameWithoutExtension(file), orderData, orderLines);
+                        CreateXmlOrder(Path.GetFileNameWithoutExtension(file), orderData, orderLines, outputFolder, custXmlSampleFile);
                     }
                 }
             }
@@ -93,14 +95,14 @@ namespace ThriveCsvEdiIntegration
             return orderReference;
         }
 
-        static void CreateXmlOrder(string fileName, string mainOrderData, List<string> orderLines)
+        static void CreateXmlOrder(string fileName, string mainOrderData, List<string> orderLines, string outputFolder, string custXmlSampleFile)
         {
             DateTime currentTime = DateTime.Now;
 
             var mainData = mainOrderData.Split(',');
 
             // Load the XML file
-            XDocument xmlDoc = XDocument.Load(@"C:\Users\Pavel.Makarov\OneDrive - Rhenus Logistics\Desktop\Thrive\testXml.xml");
+            XDocument xmlDoc = XDocument.Load(custXmlSampleFile);
 
             // Replace the values of certain elements
             XElement root = xmlDoc.Element("Message");
@@ -167,12 +169,12 @@ namespace ThriveCsvEdiIntegration
                 }
             }
 
-
             XElement LineElement = root.Element("Order").Element("Lines").Element("Line");
 
             if (LineElement != null)
             {
-                xmlDoc.Save($@"C:\Users\Pavel.Makarov\OneDrive - Rhenus Logistics\Desktop\Thrive\{fileName}_{currentTime.ToString("HHmmssfff")}_{mainData[0]}.xml");
+                string fileToSave = Path.Combine(outputFolder, $"{ fileName}_{ currentTime.ToString("HHmmssfff")}_{ mainData[0]}.xml");
+                xmlDoc.Save(fileToSave);
             }
         }
 
