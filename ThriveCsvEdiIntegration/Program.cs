@@ -31,9 +31,17 @@ namespace ThriveCsvEdiIntegration
 
                     foreach (string orderReference in orderReferences.Distinct())
                     {
+                        Console.WriteLine(orderReference);
                         List<string> mainOrderData = await ReadCsvCustomerOrderRef(file, orderReference, null);
                         string orderData = string.Join(",", mainOrderData);
-                        CreateXmlOrder(orderData);
+
+                        List<string> orderLines = await ReadCsvCustomerOrderRef(file, null, orderReference);
+                        foreach (string line in orderLines)
+                        {
+                            Console.WriteLine(line);
+                        }
+
+                        CreateXmlOrder(Path.GetFileNameWithoutExtension(file), orderData, orderLines);
                     }
                 }
             }
@@ -64,14 +72,20 @@ namespace ThriveCsvEdiIntegration
                 {
                     var columns = line.Split(',');
 
-                    if (orderRef == null)
+                    if (orderRef == null && orderLines == null)
                     {
                         orderReference.Add(columns[0]);
                     }
                     
-                    if (orderRef != null && columns[0] == orderRef)
+                    if (orderRef != null && columns[0] == orderRef && orderLines == null)
                     {
                         return columns.ToList();
+                    }
+
+                    if (orderLines != null && columns[0] == orderLines)
+                    {
+                        string orderLineData = string.Join(",", columns[1], columns[2]);
+                        orderReference.Add(orderLineData);
                     }
                 }
             }
@@ -79,7 +93,7 @@ namespace ThriveCsvEdiIntegration
             return orderReference;
         }
 
-        static void CreateXmlOrder(string mainOrderData)
+        static void CreateXmlOrder(string fileName, string mainOrderData, List<string> orderLines)
         {
             DateTime currentTime = DateTime.Now;
 
@@ -126,11 +140,8 @@ namespace ThriveCsvEdiIntegration
                 foreach (var xmlSegment in xmlSegments)
                 {
                     XElement xmlSelectedSegment = root.Element("Order").Element(xmlSegment);
-                    Console.WriteLine(columnCounter);
-                    Console.WriteLine(mainData[columnCounter]);
                     if (xmlSelectedSegment != null)
                     {
-                        Console.WriteLine(xmlSegment);
                         xmlSelectedSegment.Value = !string.IsNullOrEmpty(mainData[columnCounter]) ? mainData[columnCounter] : "";
                     }
                     columnCounter++;
@@ -140,24 +151,29 @@ namespace ThriveCsvEdiIntegration
 
                 if (orderElement != null)
                 {
-                    XElement orderLine = new XElement("Line",
-                        new XElement("StockCode", "TVIN2122"),
-                        new XElement("FullUnitQuantity", "2")
-                        );
+                    foreach (var lineData in orderLines)
+                    {
+                        string qtyToCheck = lineData.Split(',')[1];
+                        if (int.Parse(qtyToCheck) != 0)
+                        {
+                            XElement orderLine = new XElement("Line",
+                                new XElement("StockCode", lineData.Split(',')[0]),
+                                new XElement("FullUnitQuantity", lineData.Split(',')[1])
+                                );
 
-                    orderElement.Add(orderLine);
+                            orderElement.Add(orderLine);
+                        }
+                    }
                 }
             }
 
-                
 
-            //foreach (var orderData in mainOrderData)
-            //{
+            XElement LineElement = root.Element("Order").Element("Lines").Element("Line");
 
-            //}
-
-            // Save the modified XML back to a file
-            xmlDoc.Save(@"C:\Users\Pavel.Makarov\OneDrive - Rhenus Logistics\Desktop\Thrive\outputTest.xml");
+            if (LineElement != null)
+            {
+                xmlDoc.Save($@"C:\Users\Pavel.Makarov\OneDrive - Rhenus Logistics\Desktop\Thrive\{fileName}_{currentTime.ToString("HHmmssfff")}_{mainData[0]}.xml");
+            }
         }
 
         private static List<string> XmlSegments()
