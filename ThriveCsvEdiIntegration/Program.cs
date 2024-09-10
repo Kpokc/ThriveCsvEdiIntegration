@@ -13,27 +13,28 @@ namespace ThriveCsvEdiIntegration
     {
         static async Task Main(string[] args)
         {
-            // Load environment variables from the specified .env file (paths.env)
-            Env.Load("./paths.env");
-            string jsonData = Environment.GetEnvironmentVariable("JSONDATA");
-
             try
             {
+                // Read Json data
+                string jsonData = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "customers.json");
+                // Open the JSON file for reading using StreamReader
                 using (StreamReader r = new StreamReader(jsonData))
                 {
+                    // Asynchronously read the entire content of the JSON file
                     string json = await r.ReadToEndAsync();
+
+                    // Deserialize the JSON data into a dynamic object (dataArray)
                     dynamic dataArray = JsonConvert.DeserializeObject(json);
+
+                    // Start processing the data by calling StartToCheckInputFolder method with the deserialized data
                     StartToCheckInputFolder(dataArray);
                 }
             }
             catch (Exception ex)
             {
+                // Catch any exceptions that occur and print the error message
                 Console.WriteLine(ex.Message);
             }
-            
-            Console.WriteLine("XML file updated and saved as 'output.xml'.");
-
-            Console.ReadLine();
         }
 
         static private async Task StartToCheckInputFolder(dynamic dataArray)
@@ -76,40 +77,49 @@ namespace ThriveCsvEdiIntegration
 
 
         // Get distinct Customer Order references
+        // Method to read a CSV file and get distinct Customer Order references
         static private async Task<List<string>> ReadCsvCustomerOrderRef(string file, string orderRef, string orderLines)
         {
+            // List to store order references
             List<string> orderReference = new List<string>();
 
-            // Open the CSV file for reading and the output files for writing
+            // Open the CSV file for reading
             using (var reader = new StreamReader(file))
             {
-                // Read and write the header line
+                // Skip the header line
                 await reader.ReadLineAsync();
 
-                // Process each line of the CSV file
+                // Initialize a string to store each line
                 string line;
+
+                // Loop through each line of the CSV file
                 while ((line = await reader.ReadLineAsync()) != null)
                 {
+                    // Split the line into columns by comma delimiter
                     var columns = line.Split(',');
 
+                    // If both orderRef and orderLines are null, add the first column (order reference) to the list
                     if (orderRef == null && orderLines == null)
                     {
                         orderReference.Add(columns[0]);
                     }
-                    
+
+                    // If orderRef is not null and matches the first column, return the entire row as a list
                     if (orderRef != null && columns[0] == orderRef && orderLines == null)
                     {
-                        return columns.ToList();
+                        return columns.ToList();  // Return the entire row as the result
                     }
 
+                    // If orderLines is not null and matches the first column, concatenate the second and third columns and add to the list
                     if (orderLines != null && columns[0] == orderLines)
                     {
-                        string orderLineData = string.Join(",", columns[1], columns[2]);
-                        orderReference.Add(orderLineData);
+                        string orderLineData = string.Join(",", columns[1], columns[2]);  // Combine second and third columns
+                        orderReference.Add(orderLineData);  // Add to the order reference list
                     }
                 }
             }
-            //CreateXmlOrder(orderReference.Distinct().ToList());
+
+            // Return the list of distinct order references
             return orderReference;
         }
 
