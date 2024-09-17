@@ -97,14 +97,14 @@ namespace ThriveCsvEdiIntegration
                 // Check if any files were found
                 if (files != null)
                 {
-                    //// Loop through each CSV file
-                    //foreach (string file in files)
-                    //{
-                    //    // Read all distinct order references from the CSV file
-                    //    List<string> orderReferences = await ReadCsvCustomerOrderRef(file, null, null);
+                    // Loop through each CSV file
+                    foreach (string file in files)
+                    {
+                        // Read all distinct order references from the CSV file
+                        List<string> orderReferences = await ReadCsvCustomerOrderRef(file, null, null);
 
-                    //    referenceCollection.Add(file, orderReferences.Distinct().ToList());
-                    //}
+                        referenceCollection.Add(file, orderReferences.Distinct().ToList());
+                    }
 
                     //// Process each unique order reference
                     //foreach (string orderReference in orderReferences.Distinct())
@@ -137,15 +137,15 @@ namespace ThriveCsvEdiIntegration
                     //    );
                     //}
 
-                    //foreach (var entry in referenceCollection)
-                    //{
-                    //    Console.WriteLine(entry.Key);
-                    //    foreach (var reference  in entry.Value)
-                    //    {
-                    //        Console.WriteLine(reference);
-                    //    }
-                    //    Console.WriteLine("------------------");
-                    //}
+                    foreach (var entry in referenceCollection)
+                    {
+                        Console.WriteLine(entry.Key);
+                        foreach (var reference in entry.Value)
+                        {
+                            Console.WriteLine(reference);
+                        }
+                        Console.WriteLine("------------------");
+                    }
                 }
             }
             catch { }
