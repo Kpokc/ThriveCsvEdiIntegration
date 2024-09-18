@@ -9,7 +9,7 @@ namespace ThriveCsvEdiIntegration
 {
     internal class Log
     {
-        public static void Write_Log(string logEntry)
+        public static async void Write_Log(string logEntry)
         {
             // Get current month and year
             string currentMonthYear = DateTime.Now.ToString("yyyy-MM");
@@ -41,6 +41,9 @@ namespace ThriveCsvEdiIntegration
             {
                 writer.WriteLine($"{DateTime.Now} - {logEntry}");
             }
+
+            SendErrorEmail sendErrorEmail = new SendErrorEmail();
+            await sendErrorEmail.SendEmail(logEntry);
         }
     }
 }
