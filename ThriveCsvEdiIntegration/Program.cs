@@ -15,29 +15,10 @@ namespace ThriveCsvEdiIntegration
     {
         static async Task Main(string[] args)
         {
-            try
-            {
-                // Read Json data
-                string jsonData = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "customers.json");
-                // Open the JSON file for reading using StreamReader
-                using (StreamReader r = new StreamReader(jsonData))
-                {
-                    // Asynchronously read the entire content of the JSON file
-                    string json = await r.ReadToEndAsync();
+            dynamic dataArray = await ReadJsonData.ReadJson("customers.json");
 
-                    // Deserialize the JSON data into a dynamic object (dataArray)
-                    dynamic dataArray = JsonConvert.DeserializeObject(json);
-
-                    // Start processing the data by calling StartToCheckInputFolder method with the deserialized data
-                    CheckCustomersData(dataArray);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Catch any exceptions that occur and print the error message
-                //Console.WriteLine(ex.Message);
-                Write_Log($"Error class - Main: {ex.Message}");
-            }
+            // Start processing the data by calling StartToCheckInputFolder method with the deserialized data
+            CheckCustomersData(dataArray);
         }
 
         // Check customer data actual
