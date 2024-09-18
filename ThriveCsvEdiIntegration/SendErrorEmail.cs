@@ -11,28 +11,34 @@ namespace ThriveCsvEdiIntegration
 {
     internal class SendErrorEmail : ReadJsonData
     {
+        static string _app;
+        static string _host;
+        static int _port;
+        static string _emails;
+
         // Asynchronously sends an email with a specified message
         public async Task SendEmail(string message)
         {
             // Reads SMTP configuration data from the "smtp.json" file into a dynamic array
             dynamic dataArray = await ReadJson("smtp.json");
 
-            // Iterates through each item in the dynamic dataArray (assumes multiple configurations or email settings)
-            foreach (var item in dataArray)
+            // smtp.json should hold smtp data only for one host. 
+            foreach(var item in dataArray)
             {
-                // Retrieves the list of email recipients from a file specified in the "emails" field of dataArray
-                List<string> emailRecipients = GetEmailRecipients((string)dataArray.emails);
+                _app = item.app;
+                _host = item.host;
+                _port = item.port;
+                _emails = item.emails;
+            }
 
-                // If there are email recipients available, proceed to send the email
-                if (emailRecipients.Count() > 0)
-                {
-                    // Sends the email using SMTP details and the recipients
-                    Send((string)dataArray.app,           // App name
-                         (string)dataArray.host,          // SMTP server host
-                         (int)dataArray.port,             // SMTP server port
-                         message,                         // The message to be sent in the email
-                         emailRecipients);                // List of recipients
-                }
+            // Iterates through each item in the dynamic dataArray (assumes multiple configurations or email settings)
+            List<string> emailRecipients = GetEmailRecipients(_emails); ;
+
+            // If there are email recipients available, proceed to send the email
+            if (emailRecipients.Count() > 0)
+            {
+                // Sends the email using SMTP details and the recipients
+                Send(message, emailRecipients);
             }
         }
 
@@ -73,12 +79,12 @@ namespace ThriveCsvEdiIntegration
         }
 
         // Sends an email to the specified recipients using the provided SMTP details
-        private void Send(string app, string host, int port, string message, List<string> emails)
+        private void Send(string message, List<string> emails)
         {
             // Initializes a new SMTP client with the specified host and port
-            var smtpClient = new SmtpClient(host)
+            var smtpClient = new SmtpClient(_host)
             {
-                Port = port,
+                Port = _port,
                 EnableSsl = true,  // Enables SSL for secure email sending
             };
 
@@ -88,8 +94,8 @@ namespace ThriveCsvEdiIntegration
             // Creates a new email message
             var emailMessage = new MailMessage
             {
-                From = new MailAddress($"{app}_Manager@rhenus.com"),  // Sets the sender email address
-                Subject = $"{serverName} Error",  // Sets the subject, including the server name
+                From = new MailAddress($"{_app}_Manager@rhenus.com"),  // Sets the sender email address
+                Subject = $"{_app} {serverName} Error",  // Sets the subject, including the server name
                 Body = message,                   // Sets the email body (the message content)
                 IsBodyHtml = false,               // Specifies that the body is plain text, not HTML
             };
@@ -106,7 +112,7 @@ namespace ThriveCsvEdiIntegration
                 smtpClient.Send(emailMessage);
 
                 // Logs a message indicating the email was successfully sent
-                Write_Log("Error Emails Were Sent!");
+                Write_Log("Error Email Was Sent!");
             }
             catch (Exception ex)
             {
