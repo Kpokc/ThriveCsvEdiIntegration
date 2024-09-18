@@ -90,13 +90,14 @@ namespace ThriveCsvEdiIntegration
 
             // Retrieves the machine name (for logging or subject line)
             string serverName = Environment.MachineName;
+            string appRootFolder = AppDomain.CurrentDomain.BaseDirectory;
 
             // Creates a new email message
             var emailMessage = new MailMessage
             {
-                From = new MailAddress($"{_app}_Manager@rhenus.com"),  // Sets the sender email address
+                From = new MailAddress($"{_app}_EDI_Manager@rhenus.com"),  // Sets the sender email address
                 Subject = $"{_app} {serverName} Error",  // Sets the subject, including the server name
-                Body = message,                   // Sets the email body (the message content)
+                Body = $"{message} \n {appRootFolder}",                   // Sets the email body (the message content)
                 IsBodyHtml = false,               // Specifies that the body is plain text, not HTML
             };
 

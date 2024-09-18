@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using static System.Net.WebRequestMethods;
@@ -13,14 +14,28 @@ namespace ThriveCsvEdiIntegration
 {
     internal class Program : Log
     {
+        [DllImport("kernel32.dll")]
+        static extern IntPtr GetConsoleWindow();
+
+        [DllImport("user32.dll")]
+        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        const int SW_HIDE = 5;
+
         static async Task Main(string[] args)
         {
-            SendErrorEmail sendErrorEmail = new SendErrorEmail();
-            await sendErrorEmail.SendEmail("message");
-            //dynamic dataArray = await ReadJsonData.ReadJson("customers.json");
+            // Hide the console window
+            IntPtr hWndConsole = GetConsoleWindow();
 
-            //// Start processing the data by calling StartToCheckInputFolder method with the deserialized data
-            //CheckCustomersData(dataArray);
+            if (hWndConsole != IntPtr.Zero)
+            {
+                ShowWindow(hWndConsole, SW_HIDE);
+            }
+
+            dynamic dataArray = await ReadJsonData.ReadJson("customers.json");
+
+            // Start processing the data by calling StartToCheckInputFolder method with the deserialized data
+            await CheckCustomersData(dataArray);
         }
 
         // Check customer data actual
