@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ThriveCsvEdiIntegration
 {
-    internal class ProcessFilesData
+    internal class ProcessFilesData : Log
     {
         public async Task ProcessCustomerFiles(dynamic item)
         {
@@ -58,7 +58,8 @@ namespace ThriveCsvEdiIntegration
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                //Console.WriteLine($"Error: {ex.Message}");
+                Write_Log($"Error class - ProcessCustomerFiles: {ex.Message}");
             }
         }
 

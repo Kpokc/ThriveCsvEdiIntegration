@@ -11,7 +11,7 @@ using File = System.IO.File;
 
 namespace ThriveCsvEdiIntegration
 {
-    internal class Program
+    internal class Program : Log
     {
         static async Task Main(string[] args)
         {
@@ -35,7 +35,8 @@ namespace ThriveCsvEdiIntegration
             catch (Exception ex)
             {
                 // Catch any exceptions that occur and print the error message
-                Console.WriteLine(ex.Message);
+                //Console.WriteLine(ex.Message);
+                Write_Log($"Error class - Main: {ex.Message}");
             }
         }
 
@@ -58,7 +59,8 @@ namespace ThriveCsvEdiIntegration
             catch (Exception ex)
             {
                 // Catch any exceptions that occur and print the error message
-                Console.WriteLine(ex.Message);
+                //Console.WriteLine(ex.Message);
+                Write_Log($"Error class - Main: {ex.Message}");
             }
         }
 
@@ -78,7 +80,8 @@ namespace ThriveCsvEdiIntegration
             catch (Exception ex)
             {
                 // Catch any exceptions that occur and print the error message
-                Console.WriteLine(ex.Message);
+                //Console.WriteLine(ex.Message);
+                Write_Log($"Error class - Main: {ex.Message}");
             }
             return true;
         }
