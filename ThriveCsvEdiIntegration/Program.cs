@@ -29,7 +29,6 @@ namespace ThriveCsvEdiIntegration
                     dynamic dataArray = JsonConvert.DeserializeObject(json);
 
                     // Start processing the data by calling StartToCheckInputFolder method with the deserialized data
-                    Console.WriteLine("Start");
                     CheckCustomersData(dataArray);
                 }
             }
@@ -38,7 +37,6 @@ namespace ThriveCsvEdiIntegration
                 // Catch any exceptions that occur and print the error message
                 Console.WriteLine(ex.Message);
             }
-            Console.ReadLine();
         }
 
         static private bool CheckIfPathExists(dynamic item)
@@ -95,7 +93,7 @@ namespace ThriveCsvEdiIntegration
                 string[] files = Directory.GetFiles((string)item.inputPath, "*csv");
                 
                 // Check if any files were found
-                if (files != null)
+                if (files.Length > 0)
                 {
                     // Loop through each CSV file
                     foreach (string file in files)
@@ -106,80 +104,42 @@ namespace ThriveCsvEdiIntegration
                         referenceCollection.Add(file, orderReferences.Distinct().ToList());
                     }
 
-                    //// Process each unique order reference
-                    //foreach (string orderReference in orderReferences.Distinct())
-                    //{
-                    //    // Print the current order reference to the console
-                    //    Console.WriteLine(orderReference);
-
-                    //    // Read the main order data for the specific order reference
-                    //    List<string> mainOrderData = await ReadCsvCustomerOrderRef(file, orderReference, null);
-
-                    //    // Combine the main order data into a single string
-                    //    string orderData = string.Join(",", mainOrderData);
-
-                    //    // Read the order lines related to the current order reference
-                    //    List<string> orderLines = await ReadCsvCustomerOrderRef(file, null, orderReference);
-
-                    //    // Loop through each order line and print it to the console
-                    //    foreach (string line in orderLines)
-                    //    {
-                    //        Console.WriteLine(line);
-                    //    }
-
-                    //    // Create an XML file for the current order with the given parameters
-                    //    CreateXmlOrder(
-                    //        Path.GetFileNameWithoutExtension(file),  // File name without the extension
-                    //        orderData,  // Combined order data
-                    //        orderLines,  // List of order lines
-                    //        (string)item.outputPath,  // Output path for the XML file
-                    //        (string)item.xmlSample    // XML sample file for structure
-                    //    );
-                    //}
-
                     foreach (var entry in referenceCollection)
                     {
-                        Console.WriteLine(entry.Key);
-                        foreach (var reference in entry.Value)
+                        string file = entry.Key;
+
+                        foreach (var orderReference in entry.Value)
                         {
-                            Console.WriteLine(reference);
+                            // Print the current order reference to the console
+                            Console.WriteLine(orderReference);
+
+                            // Read the main order data for the specific order reference
+                            List<string> mainOrderData = await ReadCsvCustomerOrderRef(file, orderReference, null);
+
+                            // Combine the main order data into a single string
+                            string orderData = string.Join(",", mainOrderData);
+
+                            // Read the order lines related to the current order reference
+                            List<string> orderLines = await ReadCsvCustomerOrderRef(file, null, orderReference);
+
+                            // Create an XML file for the current order with the given parameters
+                            CreateXmlOrder(
+                                Path.GetFileNameWithoutExtension(file),  // File name without the extension
+                                orderData,  // Combined order data
+                                orderLines,  // List of order lines
+                                (string)item.outputPath,  // Output path for the XML file
+                                (string)item.xmlSample    // XML sample file for structure
+                            );
                         }
                         Console.WriteLine("------------------");
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            { 
+                Console.WriteLine($"Error: {ex.Message}");
+            }
         }
-
-        //private static async Task ProcessSingleFileData(string file, dynamic item)
-        //{
-        //    Console.WriteLine($"Get Distinct Order ref.");
-        //    // Read all distinct order references from the CSV file
-        //    List<string> orderReferences = await ReadCsvCustomerOrderRef(file, null, null);
-
-        //    //await Task.WhenAll((IEnumerable<Task>)orderReferences.Distinct().Select(orderReference => ProcessSingleFileRef(file, orderReference, item)));
-        //}
-
-        //private static async Task ProcessSingleFileRef(string file, string orderReference, dynamic item)
-        //{
-            
-        //    //Read the main order data for the specific order reference
-        //    List<string> mainOrderData = await ReadCsvCustomerOrderRef(file, orderReference, null);
-        //    //        // Combine the main order data into a single string
-        //    string orderData = string.Join(",", mainOrderData);
-
-        //    // Read the order lines related to the current order reference
-        //    List<string> orderLines = await ReadCsvCustomerOrderRef(file, null, orderReference);
-
-        //    // Create an XML file for the current order with the given parameters
-        //    CreateXmlOrder(
-        //        Path.GetFileNameWithoutExtension(file),  // File name without the extension
-        //        orderData,  // Combined order data
-        //        orderLines,  // List of order lines
-        //        (string)item.outputPath,  // Output path for the XML file
-        //        (string)item.xmlSample    // XML sample file for structure
-        //    );
-        //}
 
         // Get distinct Customer Order references
         // Method to read a CSV file and get distinct Customer Order references
