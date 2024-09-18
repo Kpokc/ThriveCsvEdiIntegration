@@ -15,10 +15,12 @@ namespace ThriveCsvEdiIntegration
     {
         static async Task Main(string[] args)
         {
-            dynamic dataArray = await ReadJsonData.ReadJson("customers.json");
+            SendErrorEmail sendErrorEmail = new SendErrorEmail();
+            await sendErrorEmail.SendEmail("message");
+            //dynamic dataArray = await ReadJsonData.ReadJson("customers.json");
 
-            // Start processing the data by calling StartToCheckInputFolder method with the deserialized data
-            CheckCustomersData(dataArray);
+            //// Start processing the data by calling StartToCheckInputFolder method with the deserialized data
+            //CheckCustomersData(dataArray);
         }
 
         // Check customer data actual
