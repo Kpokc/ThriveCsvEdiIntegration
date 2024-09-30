@@ -16,7 +16,6 @@ namespace ThriveCsvEdiIntegration
                 Dictionary<string, List<string>> referenceCollection = new Dictionary<string, List<string>>();
                 // Get all CSV files from the input path specified in the item
                 string[] files = Directory.GetFiles((string)item.inputPath, "*csv");
-
                 // Check if any files were found
                 if (files.Length > 0)
                 {
@@ -54,12 +53,42 @@ namespace ThriveCsvEdiIntegration
                             );
                         }
                     }
+
+                    // Loop through each CSV file
+                    foreach (string file in files)
+                    {
+                        MoveFilesToArchive(file, item);
+                    }
+                    
                 }
             }
             catch (Exception ex)
             {
                 //Console.WriteLine($"Error: {ex.Message}");
                 Write_Log($"Error class - ProcessCustomerFiles: {ex.Message}");
+            }
+        }
+
+        public static void MoveFilesToArchive(string file, dynamic item)
+        {
+            string archivePath = (string)item.archivePath;
+            Write_Log(file);
+            try
+            {
+                // Check if the destination file exists
+                if (File.Exists(Path.Combine(archivePath, Path.GetFileName(file))))
+                {
+                    // If it exists, delete the destination file
+                    File.Delete(Path.Combine(archivePath, Path.GetFileName(file)));
+                }
+                
+                // Move the file from source to destination
+                File.Move(file, Path.Combine(archivePath, Path.GetFileName(file)));
+            }
+            catch (Exception ex)
+            {
+                //Console.WriteLine($"Error moving file: {ex.Message}");
+                Write_Log($"Error moving file: {ex.Message}");
             }
         }
 

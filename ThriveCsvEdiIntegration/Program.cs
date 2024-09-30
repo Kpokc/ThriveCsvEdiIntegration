@@ -70,6 +70,7 @@ namespace ThriveCsvEdiIntegration
                 // Check if all necessary directories exist, return false if any do not
                 if (!Directory.Exists((string)item.inputPath) ||
                     !Directory.Exists((string)item.outputPath) ||
+                    !Directory.Exists((string)item.archivePath) ||
                     !File.Exists((string)item.xmlSample))
                 {
                     return false;
